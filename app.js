@@ -1,13 +1,20 @@
 /** BizTime express application. */
 
-
 const express = require("express");
 
 const app = express();
+const companiesRouter = require('./routes/companies');
+const invoicesRouter = require('./routes/invoices');
 const ExpressError = require("./expressError")
 
-app.use(express.json());
+// Mount the companies router at the /companies path
+app.use('/companies', companiesRouter);
 
+// Mount the invoices router at the /invoices path
+app.use('/invoices', invoicesRouter);
+
+// Middleware to parse JSON request bodies
+app.use(express.json());
 
 /** 404 handler */
 
