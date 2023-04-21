@@ -15,12 +15,13 @@ router.get('/', async (req, res, next) => {
 });
 
 // GET /companies/:code
-router.get('/:code', async (req, res) => {
+router.get('/:code', async (req, res, next) => {
   
   try {
+    console.log("in company route")
     const comp_code = req.params.code;
-    const result = await db.query('SELECT * FROM companies WHERE comp_code=$1', [comp_code]);
-    return res.json({company: result.rows[0]});
+    const response = await db.query('SELECT * FROM companies WHERE code=$1', [comp_code]);
+    return res.json({company: response.rows[0]});
   } catch (err) {
     return next(err);
   }
@@ -28,40 +29,54 @@ router.get('/:code', async (req, res) => {
 
 
 
-// // POST /companies
-// router.post('/', (req, res) => {
-//   const { code, name, description } = req.body;
+// POST /companies
+router.post('/', async (req, res, next) => {
+  try {
+    const { code, name, description } = req.body;
+    const response = await db.query(
+          `INSERT INTO companies (code, name, description) 
+          VALUES ($1, $2, $3) RETURNING code, name, description`, [
+            code, name, description
+          ]);
+    return res.status(201).json({company: response.rows[0]});
 
-//   // Insert the new company into your database
-//   // Example:
-//   // await db.query('INSERT INTO companies (code, name, description) VALUES ($1, $2, $3)', [code, name, description]);
-//   const newCompany = { code, name, description };
 
-//   return res.status(201).json({ company: newCompany });
-// });
+  } catch (err) {
+    return next(err)
+  }
+});
 
-// // PUT /companies/:code
-// router.put('/:code', (req, res) => {
-//   const { code } = req.params;
-//   const { name, description } = req.body;
+// PATCH /companies/:code
+router.patch('/:code', async (req, res, next) => {
+  try{
+    const { code } = req.params;
+    const { name, description } = req.body;
 
-//   // Update the company with the given code in your database
-//   // Example:
-//   // await db.query('UPDATE companies SET name=$1, description=$2 WHERE code=$3', [name, description, code]);
-//   const updatedCompany = { code, name, description };
+    // Update the company with the given code in your database
+    
+    const response = await db.query(
+        `UPDATE companies SET name=$1, description=$2 WHERE code=$3`
+        , [name, description, code]);
+    return res.status(202).json({company: response.rows[0]});
 
-//   return res.json({ company: updatedCompany });
-// });
+  } catch (err) {
+    return next(err)
+  }
+});
 
-// // DELETE /companies/:code
-// router.delete('/:code', (req, res) => {
-//   const { code } = req.params;
+// DELETE /companies/:code
+router.delete('/:code', async (req, res, next ) => {
+  const { code } = req.params;
+  try{
 
-//   // Delete the company with the given code from your database
-//   // Example:
-//   // await db.query('DELETE FROM companies WHERE code=$1', [code]);
+  // Delete the company with the given code from your database
 
-//   return res.json({ status: 'deleted' });
-// });
+  const response = await db.query('DELETE FROM companies WHERE code=$1', [code]);
+
+  return res.json({ status: 'deleted' });
+  } catch (err) {
+    return next(err)
+  } 
+});
 
 module.exports = router;
