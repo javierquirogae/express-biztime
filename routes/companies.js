@@ -2,6 +2,7 @@ const express = require('express');
 const ExpressError = require("../expressError")
 const router = express.Router();
 const db = require('../db');
+const slugify = require('slugify')
 
 // GET /companies
 router.get('/', async (req, res, next) => {
@@ -20,7 +21,8 @@ router.get('/:code', async (req, res, next) => {
   try {
     console.log("in company route")
     const comp_code = req.params.code;
-    const response = await db.query('SELECT * FROM companies WHERE code=$1', [comp_code]);
+    const response = await db.query('SELECT * FROM companies WHERE code=$1', 
+      [comp_code]);
     return res.json({company: response.rows[0]});
   } catch (err) {
     return next(err);
@@ -35,8 +37,9 @@ router.post('/', async (req, res, next) => {
     const { code, name, description } = req.body;
     const response = await db.query(
           `INSERT INTO companies (code, name, description) 
-          VALUES ($1, $2, $3) RETURNING code, name, description`, [
-            code, name, description
+          VALUES ($1, $2, $3) 
+          RETURNING code, name, description`, [
+            slugify(code), name, description
           ]);
     return res.status(201).json({company: response.rows[0]});
 
@@ -55,7 +58,8 @@ router.patch('/:code', async (req, res, next) => {
     // Update the company with the given code in your database
     
     const response = await db.query(
-        `UPDATE companies SET name=$1, description=$2 WHERE code=$3`
+        `UPDATE companies SET name=$1, description=$2 WHERE code=$3
+        RETURNING code, name, description`
         , [name, description, code]);
     return res.status(202).json({company: response.rows[0]});
 
@@ -71,7 +75,8 @@ router.delete('/:code', async (req, res, next ) => {
 
   // Delete the company with the given code from your database
 
-  const response = await db.query('DELETE FROM companies WHERE code=$1', [code]);
+  const response = await db.query('DELETE FROM companies WHERE code=$1', 
+    [code]);
 
   return res.json({ status: 'deleted' });
   } catch (err) {

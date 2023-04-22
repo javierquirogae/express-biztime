@@ -65,9 +65,9 @@ router.post('/', async (req, res, next) => {
   }
 });
 
-// PUT /invoices/:id
+// PATCH /invoices/:id
 // Updates an invoice
-router.put('/:id', async (req, res, next) => {
+router.patch('/:id', async (req, res, next) => {
   try {
     const result = await db.query(`
       UPDATE invoices 
@@ -85,6 +85,41 @@ router.put('/:id', async (req, res, next) => {
     return next(err);
   }
 });
+
+
+
+router.put('/:id', async function(req, res, next) {
+  try {
+    const { amt, paid } = req.body;
+    let paidDate = null;
+    const result = await db.query(
+      'SELECT * FROM invoices WHERE id=$1',
+      [req.params.id]
+    );
+    const invoice = result.rows[0];
+    if (!invoice) {
+      return res.status(404).json({ error: 'Invoice not found' });
+    }
+    if (paid && !invoice.paid) {
+      paidDate = new Date();
+    } else if (!paid && invoice.paid) {
+      paidDate = null;
+    } else {
+      paidDate = invoice.paid_date;
+    }
+    const updateResult = await db.query(
+      'UPDATE invoices SET amt=$1, paid=$2, paid_date=$3 WHERE id=$4 RETURNING *',
+      [amt, paid, paidDate, req.params.id]
+    );
+    const updatedInvoice = updateResult.rows[0];
+    return res.json({ invoice: updatedInvoice });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+
+
 
 // DELETE /invoices/:id
 // Deletes an invoice
